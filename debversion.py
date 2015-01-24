@@ -1,8 +1,12 @@
+import re
 
 
 class Block(object):
     def __init__(self, block):
         self.relations = [Relation(x.strip()) for x in block.split(",")]
+
+    def __repr__(self):
+        return ", ".join((repr(x) for x in self.relations))
 
 
 class Relation(object):
@@ -12,6 +16,9 @@ class Relation(object):
 
     def __init__(self, frame):
         self.targets = [Target(x.strip()) for x in frame.split("|")]
+
+    def __repr__(self):
+        return " | ".join((repr(x) for x in self.targets))
 
 
 class Arch(object):
@@ -32,7 +39,14 @@ class Arch(object):
     )
 
     def __init__(self, arch):
-        pass
+        self.arch = arch
+
+    def __repr__(self):
+        x = "["
+        if self.classification == "not-arch":
+            x += "!"
+        x += "{}]".format(self.arch)
+        return x
 
 
 class Version(object):
@@ -54,7 +68,13 @@ class Version(object):
     )
 
     def __init__(self, version):
-        pass
+        operator, target = version.split(" ", 1)
+        self.classification = operator
+        self.version = target
+
+    def __repr__(self):
+        x = "({} {})".format(self.classification, self.version)
+        return x
 
 
 class Target(object):
@@ -65,6 +85,56 @@ class Target(object):
 
     arch = None
     version = None
+    package = None
 
     def __init__(self, target):
-        pass
+        if " " not in target:
+            self.package = target
+            return
+
+        package, qualifiers = target.split(" ", 1)
+        self.package = package
+        qualifiers = dict(self._tokenize(qualifiers))
+        self._assign(**qualifiers)
+
+    def __repr__(self):
+        stream = "{}".format(self.package)
+
+        if self.arch:
+            stream += " {}".format(self.arch)
+
+        if self.version:
+            stream += " {}".format(self.version)
+
+        return stream
+
+    def _assign(self, arch=None, version=None):
+        self.arch = Arch(arch) if arch is not None else arch
+        self.version = Version(version) if version is not None else arch
+
+    def _tokenize(self, relation):
+        relation = relation.strip()
+
+        aqual = relation.find("[")
+        aqual = aqual if aqual >= 0 else None
+
+        vqual = relation.find("(")
+        vqual = vqual if vqual >= 0 else None
+
+        if aqual is None and vqual is None:
+            return
+
+        if (vqual is None) or (aqual is not None and aqual < vqual):
+            closing = relation.find("]")
+            yield ("arch", relation[aqual+1:closing])
+            yield from self._tokenize(relation[closing:])
+            return
+
+        if (aqual is None) or (vqual is not None and vqual < aqual):
+            closing = relation.find(")")
+            yield ("version", relation[vqual+1:closing])
+            yield from self._tokenize(relation[closing:])
+            return
+
+        print(aqual, vqual)
+        raise ValueError("OMG WTF BBQ")
