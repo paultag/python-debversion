@@ -43,10 +43,10 @@ class Arch(object):
 
         if arch.startswith("!"):
             self.classification = "not-arch"
-            self.arch = arch[1:]
+            self.arch = arch[1:].strip()
         else:
             self.classification = "arch"
-            self.arch = arch
+            self.arch = arch.strip()
 
     def __repr__(self):
         x = "[{}{}]".format(
@@ -88,8 +88,8 @@ class Version(object):
     def __init__(self, version):
         operator = self._seq(version)
         target = version.replace(operator, "")
-        self.classification = operator
-        self.version = target
+        self.classification = operator.strip()
+        self.version = target.strip()
 
     def __repr__(self):
         x = "({} {})".format(self.classification, self.version)
