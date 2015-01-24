@@ -115,13 +115,13 @@ class Target(object):
 
     def __init__(self, target):
         if "(" not in target and "[" not in target:
-            self.package = target
+            self.package = target.strip()
             return
 
         marker = self._seq(target)
         package, qualifiers = target.split(marker, 1)
 
-        self.package = package
+        self.package = package.strip()
         qualifiers = dict(self._tokenize(marker + qualifiers))
         self._assign(**qualifiers)
 
