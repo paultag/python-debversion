@@ -39,13 +39,20 @@ class Arch(object):
     )
 
     def __init__(self, arch):
-        self.arch = arch
+        arch = arch.strip()
+
+        if arch.startswith("!"):
+            self.classification = "not-arch"
+            self.arch = arch[1:]
+        else:
+            self.classification = "arch"
+            self.arch = arch
 
     def __repr__(self):
-        x = "["
-        if self.classification == "not-arch":
-            x += "!"
-        x += "{}]".format(self.arch)
+        x = "[{}{}]".format(
+            {"not-arch": "!", "arch": ""}[self.classification],
+            self.arch
+        )
         return x
 
 
@@ -67,8 +74,20 @@ class Version(object):
         (">>", "strictly later"),
     )
 
+    def _seq(self, target):
+        els = sorted(list(filter(lambda x: x[1] != -1, [
+            (flag, target.find(flag)) for flag, _ in self.CLASSIFICATIONS
+        ])), key=lambda x: x[1])
+        keys = list(map(lambda x: x[0], els))
+        if len(keys) > 1:
+            if "=" in keys:
+                keys.pop(keys.index("="))
+        assert len(keys) == 1
+        return keys[0]
+
     def __init__(self, version):
-        operator, target = version.split(" ", 1)
+        operator = self._seq(version)
+        target = version.replace(operator, "")
         self.classification = operator
         self.version = target
 
@@ -87,14 +106,23 @@ class Target(object):
     version = None
     package = None
 
+    def _seq(self, target):
+        vq = target.find("(")
+        aq = target.find("[")
+        vq = vq if vq >= 0 else float("inf")
+        aq = aq if aq >= 0 else float("inf")
+        return ("[" if (aq < vq) else "(")
+
     def __init__(self, target):
-        if " " not in target:
+        if "(" not in target and "[" not in target:
             self.package = target
             return
 
-        package, qualifiers = target.split(" ", 1)
+        marker = self._seq(target)
+        package, qualifiers = target.split(marker, 1)
+
         self.package = package
-        qualifiers = dict(self._tokenize(qualifiers))
+        qualifiers = dict(self._tokenize(marker + qualifiers))
         self._assign(**qualifiers)
 
     def __repr__(self):
@@ -110,7 +138,7 @@ class Target(object):
 
     def _assign(self, arch=None, version=None):
         self.arch = Arch(arch) if arch is not None else arch
-        self.version = Version(version) if version is not None else arch
+        self.version = Version(version) if version is not None else version
 
     def _tokenize(self, relation):
         relation = relation.strip()
