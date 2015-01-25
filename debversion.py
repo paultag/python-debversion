@@ -1,5 +1,3 @@
-import re
-
 
 class Block(object):
     def __init__(self, block):
