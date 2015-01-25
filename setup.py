@@ -7,8 +7,8 @@ long_description = ""
 setup(
     name=__appname__,
     version=__version__,
-    scripts=[],
-    packages=['debversion'],
+    scripts=['debversion.py'],
+    packages=[],
     author="Paul Tagliamonte",
     author_email="tag@pault.ag",
     long_description=long_description,
