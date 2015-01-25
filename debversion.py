@@ -153,13 +153,15 @@ class Target(object):
         if (vqual is None) or (aqual is not None and aqual < vqual):
             closing = relation.find("]")
             yield ("arch", relation[aqual+1:closing])
-            yield from self._tokenize(relation[closing:])
+            for x in self._tokenize(relation[closing:]):
+                yield x
             return
 
         if (aqual is None) or (vqual is not None and vqual < aqual):
             closing = relation.find(")")
             yield ("version", relation[vqual+1:closing])
-            yield from self._tokenize(relation[closing:])
+            for x in self._tokenize(relation[closing:]):
+                yield x
             return
 
         print(aqual, vqual)
