@@ -9,6 +9,11 @@ class Block(object):
     def __repr__(self):
         return ", ".join((repr(x) for x in self.relations))
 
+    def to_dict(self):
+        return {
+            "relations": [x.to_dict() for x in self.relations]
+        }
+
 
 class Relation(object):
     """
@@ -20,6 +25,11 @@ class Relation(object):
 
     def __repr__(self):
         return " | ".join((repr(x) for x in self.targets))
+
+    def to_dict(self):
+        return {
+            "targets": [x.to_dict() for x in self.targets]
+        }
 
 
 class Arch(object):
@@ -55,6 +65,12 @@ class Arch(object):
             self.arch
         )
         return x
+
+    def to_dict(self):
+        return {
+            "classification": self.classification,
+            "arch": self.arch
+        }
 
 
 class Version(object):
@@ -95,6 +111,12 @@ class Version(object):
     def __repr__(self):
         x = "({} {})".format(self.classification, self.version)
         return x
+
+    def to_dict(self):
+        return {
+            "classification": self.classification,
+            "version": self.version
+        }
 
 
 class Target(object):
@@ -169,3 +191,10 @@ class Target(object):
 
         print(aqual, vqual)
         raise ValueError("OMG WTF BBQ")
+
+    def to_dict(self):
+        return {
+            "arch": self.arch.to_dict() if self.arch else None,
+            "version": self.version.to_dict() if self.version else None,
+            "package": self.package,
+        }
