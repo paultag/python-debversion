@@ -1,3 +1,6 @@
+__appname__ = "debversion"
+__version__ = "0.1"
+
 
 class Block(object):
     def __init__(self, block):
