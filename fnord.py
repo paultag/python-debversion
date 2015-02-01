@@ -11,25 +11,31 @@ grammar = Grammar(
 
     target = package qualifiers*
 
-
-    package = value
+    package = ~"[A-Z0-9\\.-]*"i
 
     qualifiers = arch
                / version
+               / profile
 
-    arch = ws? "[" ws? value ws? "]" ws?
-    version = ws? "(" ws? operator ws? value ws? ")" ws?
+    version = ws? "("      ws? operator ws?  ~"[^)]*"i ws? ")" ws?
+    # 1:1.0-1fnord1~lawl2+b2
+
     operator = ">=" / "<="
              / "<<" / ">>"
              / "="
+
+    arch    = ws? "[" (ws? (ws? negate ws?)? ~"[^]]*"i ws?)+ "]" ws?
+    # [amd64] // [amd i386] // [!linux-any amd64]
+
+    profile = ws? "<" (ws? (ws? negate ws?)? ~"[^>]*"i ws?)+ ">" ws?
+    # <fnord> // <stage1 cross> <stage1> // <!cross> <!stage1>
 
     ws = wss+
     wss = " "
         / "\\n"
         / "\\r"
         / "\\t"
-
-    value = ~"[A-Z0-9\\.-]*"i
+    negate = "!"
     """)
 
-print(grammar.parse("foo [amd64] (>= 1.0) | baz, bar"))
+print(grammar.parse("foo (>= 1:1.0-1fnord1~lawl2+b2)"))

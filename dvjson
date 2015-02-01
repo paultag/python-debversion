@@ -1,0 +1,27 @@
+/**
+ * Relations -> Targets -> Target
+ *
+ * e.g.
+ * Depends: fluxbox (>= 1:1.0ubuntu1~) <!stage1> [!linux-any amd64]
+ */
+
+[
+    [{
+        "package": "fluxbox",
+        "version": {
+            "classification": ">=",
+            "value": "1:1.0ubuntu1~"
+        },
+        "profiles": [
+            {"classification": "not-profile",
+             "value": "stage1"}
+        ],
+        "arches": [
+            {"classification": "not-arch",
+             "value": "linux-any"},
+            {"classification": "arch",
+             "value": "amd64"}
+        ]
+    }]
+    ...
+]
