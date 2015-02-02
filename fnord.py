@@ -38,4 +38,51 @@ grammar = Grammar(
     negate = "!"
     """)
 
-print(grammar.parse("foo (>= 1:1.0-1fnord1~lawl2+b2)"))
+tree = grammar.parse("foo (>= 1:1.0-1fnord1~lawl2+b2), bar | baz")
+
+
+class Block:
+    def __init__(self, relations):
+        self.relations = relations
+
+class Relation:
+    def __init__(self, relation):
+        pass
+
+class Target:
+    def __init__(self, target):
+        pass
+
+
+_table = {}
+def builds(type_):
+    def _(fn):
+        _table[type_] = fn
+        return fn
+    return _
+
+class DebversionCompiler:
+
+    def compile(self, el):
+        name = el.expr_name
+        return _table[name](self, el)
+
+    @builds("")
+    def compile_stream(self, el):
+        return [self.compile(x) for x in el.children]
+
+    @builds("relations")
+    def compile_relations(self, el):
+        return Block([self.compile(x) for x in el.children])
+
+    @builds("relation")
+    def compile_relation(self, el):
+        return [Relation(*self.compile(x)) for x in el.children]
+
+    @builds("target")
+    def compile_target(self, el):
+        return Target()
+
+
+x = DebversionCompiler()
+x.compile(tree)
