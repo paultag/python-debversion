@@ -1,4 +1,5 @@
-from parsimonious.grammar import Grammar
+from parsimonious import Grammar, NodeVisitor
+from collections import defaultdict
 
 
 grammar = Grammar(
@@ -17,7 +18,8 @@ grammar = Grammar(
                / version
                / profile
 
-    version = ws? "("      ws? operator ws?  ~"[^)]*"i ws? ")" ws?
+    version_string = ~"[^)]*"i
+    version = ws? "(" ws? operator ws? version_string ws? ")" ws?
     # 1:1.0-1fnord1~lawl2+b2
 
     operator = ">=" / "<="
@@ -38,51 +40,93 @@ grammar = Grammar(
     negate = "!"
     """)
 
-tree = grammar.parse("foo (>= 1:1.0-1fnord1~lawl2+b2), bar | baz")
-
 
 class Block:
-    def __init__(self, relations):
+    def __init__(self, *relations):
         self.relations = relations
 
 class Relation:
-    def __init__(self, relation):
-        pass
+    def __init__(self, targets):
+        self.targets = targets
 
 class Target:
-    def __init__(self, target):
-        pass
+    def __init__(self, package, qualifiers=None):
+        self.package = package
+        self.qualifiers = qualifiers if qualifiers else []
+
+class Package:
+    def __init__(self, package):
+        self.package = package
+
+class Operator:
+    def __init__(self, operator):
+        self.operator = operator
+
+class VersionNumber:
+    def __init__(self, number):
+        self.number = number
+
+class Version:
+    def __init__(self, operator, versionnumber):
+        self.operator = operator
+        self.number = versionnumber
+
+class Qualifiers:
+    def __init__(self, *qualifiers):
+        self.qualifiers = qualifiers
 
 
-_table = {}
-def builds(type_):
-    def _(fn):
-        _table[type_] = fn
-        return fn
-    return _
-
-class DebversionCompiler:
-
-    def compile(self, el):
-        name = el.expr_name
-        return _table[name](self, el)
-
-    @builds("")
-    def compile_stream(self, el):
-        return [self.compile(x) for x in el.children]
-
-    @builds("relations")
-    def compile_relations(self, el):
-        return Block([self.compile(x) for x in el.children])
-
-    @builds("relation")
-    def compile_relation(self, el):
-        return [Relation(*self.compile(x)) for x in el.children]
-
-    @builds("target")
-    def compile_target(self, el):
-        return Target()
+def _ich(stream):
+    return filter(lambda x: x is not None, stream)
 
 
-x = DebversionCompiler()
-x.compile(tree)
+def _tsplat(stream):
+    return {el.__class__.__name__.lower(): el for el in _ich(stream)}
+
+
+class DebversionVisitor(NodeVisitor):
+
+    def visit_relations(self, node, visited_children):
+        return Block(*_ich(visited_children))
+
+    def visit_relation(self, node, visited_children):
+        return Relation(*_ich(visited_children))
+
+    def visit_target(self, node, visited_children):
+        return Target(**_tsplat(visited_children))
+
+    def visit_package(self, node, visited_children):
+        return Package(node.text)
+
+    def visit_operator(self, node, visited_children):
+        return Operator(node.text)
+
+    def visit_version_string(self, node, visited_children):
+        return VersionNumber(node.text)
+
+    def visit_version(self, node, visited_children):
+        return Version(**_tsplat(visited_children))
+
+    def visit_qualifiers(self, node, visited_children):
+        return Qualifiers(*visited_children)
+
+    ###
+
+    def _noop(self, node, visited_children):
+        visited_children = list(_ich(visited_children))
+        if len(visited_children) == 1:
+            return visited_children[0]
+        if visited_children != []:
+            return visited_children
+
+    visit_relation_delim = _noop
+    visit_ = _noop
+    visit_target_delim = _noop
+    visit_wss = _noop
+    visit_ws = _noop
+
+
+
+tree = grammar.parse("foo (>= 1:1.0-1fnord1~lawl2+b2), bar | baz")
+x = DebversionVisitor()
+print(x.visit(tree))
