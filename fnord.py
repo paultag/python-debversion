@@ -12,7 +12,7 @@ grammar = Grammar(
 
     target = package qualifiers*
 
-    package = ~"[A-Z0-9\\.-]*"i
+    package = ~"[A-Z0-9\\+\\.-]*"i
 
     qualifiers = archs
                / version
@@ -43,9 +43,6 @@ grammar = Grammar(
         / "\\t"
     negate = "!"
     """)
-
-# tree = grammar.parse("foo (>= 1:1.0-1fnord1~lawl2+b2), bar | baz [!amd64 sparc], barbaz <!stage1 stage2>")
-tree = grammar.parse("barbaz <!stage1 stage2>")
 
 
 def tfilter(tree, test):
@@ -159,5 +156,15 @@ class Package:
         return self.name
 
 
-x = Block(tree)
-print(x.to_dict())
+
+from debian.deb822 import Deb822
+import subprocess
+
+
+for para in Deb822.iter_paragraphs(open(
+        '/var/lib/apt/lists/http.debian.net_'
+        'debian_dists_unstable_main_binary-amd64_Packages', 'r').read()):
+
+    tree = grammar.parse(para.get('Depends', ""))
+    x = Block(tree)
+    print(x.to_dict())
