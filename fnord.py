@@ -13,7 +13,9 @@ grammar = Grammar(
     target = package qualifiers*
 
     package_string = ~"[A-Z0-9\\+\\.-]*"i
-    package_multiarch = ":" ~"[\ ]*"i
+    package_multiarch_string = ~"[A-Z0-9\\+\\.-]*"i
+    package_multiarch = ":" package_multiarch_string
+
     package = package_string package_multiarch?
 
     qualifiers = archs
@@ -150,13 +152,29 @@ def qualifiers(tree):
         }[node.expr_name](node)
 
 
+def get_one(stream):
+    els = list(stream)
+    if els == []:
+        return None
+    return els[0].text
+
+
 class Package:
     def __init__(self, tree):
-        self.name = tree.text
+        self.arch = get_one(tfilter_name(tree, 'package_multiarch_string'))
+        self.package = get_one(tfilter_name(tree, 'package_string'))
 
     def to_dict(self):
-        return self.name
+        return {
+            "arch": self.arch,
+            "package": self.package,
+        }
 
+tree = grammar.parse("foo:amd64 (>= 1.0)")
+x = Block(tree)
+print(x.to_dict())
+import sys
+sys.exit()
 
 
 from debian.deb822 import Deb822
