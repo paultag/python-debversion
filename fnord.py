@@ -1,5 +1,4 @@
-from parsimonious import Grammar, NodeVisitor
-from collections import defaultdict
+from parsimonious import Grammar
 
 
 grammar = Grammar(
@@ -170,11 +169,11 @@ class Package:
             "package": self.package,
         }
 
-tree = grammar.parse("foo:amd64 (>= 1.0)")
-x = Block(tree)
-print(x.to_dict())
-import sys
-sys.exit()
+# tree = grammar.parse("foo:amd64 (>= 1.0)")
+# x = Block(tree)
+# print(x.to_dict())
+# import sys
+# sys.exit()
 
 
 from debian.deb822 import Deb822
