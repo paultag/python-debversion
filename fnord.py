@@ -12,7 +12,9 @@ grammar = Grammar(
 
     target = package qualifiers*
 
-    package = ~"[A-Z0-9\\+\\.-]*"i
+    package_string = ~"[A-Z0-9\\+\\.-]*"i
+    package_multiarch = ":" ~"[\ ]*"i
+    package = package_string package_multiarch?
 
     qualifiers = archs
                / version
