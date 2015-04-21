@@ -97,7 +97,5 @@ class Package:
         self.package = get_one(tfilter_name(tree, 'package_string'))
 
     def to_dict(self):
-        return {
-            "arch": self.arch,
-            "package": self.package,
-        }
+        return {"arch": self.arch,
+                "package": self.package}
