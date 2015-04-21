@@ -44,7 +44,8 @@ grammar = Grammar(
     negate = "!"
     """)
 
-tree = grammar.parse("foo (>= 1:1.0-1fnord1~lawl2+b2), bar | baz [!amd64 sparc]")
+# tree = grammar.parse("foo (>= 1:1.0-1fnord1~lawl2+b2), bar | baz [!amd64 sparc], barbaz <!stage1 stage2>")
+tree = grammar.parse("barbaz <!stage1 stage2>")
 
 
 def tfilter(tree, test):
@@ -100,18 +101,32 @@ class Arch:
 
 class Profile:
     def __init__(self, tree):
-        pass
+        self.negated = list(tfilter_name(tree, 'negate')) != []
+        profile, = list(tfilter_name(tree, 'profile_string'))
+        self.profile = profile.text
 
     def to_dict(self):
-        return {"negated": False, "arch": None}
+        return {"negated": self.negated,
+                "profile": self.profile}
+
+
+class Profiles:
+    def __init__(self, tree):
+        self.profiles = [Profile(x) for x in tfilter_name(tree, 'profile')]
+
+    def to_dict(self):
+        return {"profiles": [x.to_dict() for x in self.profiles]}
 
 
 class Version:
     def __init__(self, tree):
-        pass
+        operator, = list(tfilter_name(tree, 'operator'))
+        version, = list(tfilter_name(tree, 'version_string'))
+        self.operator = operator.text
+        self.version = version.text
 
     def to_dict(self):
-        return {"negated": False, "arch": None}
+        return {"operator": self.operator, "version": self.version}
 
 
 def qualifiers(tree):
@@ -119,6 +134,9 @@ def qualifiers(tree):
     def arches(tree):
         for arch in tfilter_name(tree, 'arch'):
             yield Arch(arch)
+
+    def profiles(tree):
+        yield Profiles(tree)
 
     def versions(tree):
         yield Version(tree)
@@ -129,6 +147,7 @@ def qualifiers(tree):
         yield from {
             "archs": arches,
             "version": versions,
+            "profiles": profiles,
         }[node.expr_name](node)
 
 
