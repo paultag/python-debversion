@@ -1,14 +1,24 @@
+from .utils import tfilter_name, tfilter, get_one
 
 
-def tfilter(tree, test):
-    if test(tree):
-        yield tree
-    for el in tree.children:
-        yield from tfilter(el, test)
+def qualifiers(tree):
+    def arches(tree):
+        for arch in tfilter_name(tree, 'arch'):
+            yield Arch(arch)
+    def profiles(tree):
+        yield Profiles(tree)
+    def versions(tree):
+        yield Version(tree)
+    for node in tfilter(tree, lambda x: x.expr_name in [
+        'archs', 'profiles', 'version'
+    ]):
+        yield from {
+            "archs": arches,
+            "version": versions,
+            "profiles": profiles,
+        }[node.expr_name](node)
 
 
-def tfilter_name(tree, name):
-    return tfilter(tree, lambda x: x.expr_name == name)
 
 
 class Block:
@@ -79,35 +89,6 @@ class Version:
 
     def to_dict(self):
         return {"operator": self.operator, "version": self.version}
-
-
-def qualifiers(tree):
-
-    def arches(tree):
-        for arch in tfilter_name(tree, 'arch'):
-            yield Arch(arch)
-
-    def profiles(tree):
-        yield Profiles(tree)
-
-    def versions(tree):
-        yield Version(tree)
-
-    for node in tfilter(tree, lambda x: x.expr_name in [
-        'archs', 'profiles', 'version'
-    ]):
-        yield from {
-            "archs": arches,
-            "version": versions,
-            "profiles": profiles,
-        }[node.expr_name](node)
-
-
-def get_one(stream):
-    els = list(stream)
-    if els == []:
-        return None
-    return els[0].text
 
 
 class Package:
