@@ -51,5 +51,5 @@ class DebVersionGrammar:
 
     @classmethod
     def parse(cls, stream):
-        tree = grammar.parse(stream)
+        tree = cls.grammar.parse(stream)
         return Block(tree)
